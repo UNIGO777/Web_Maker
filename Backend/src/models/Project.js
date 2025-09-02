@@ -50,6 +50,10 @@ const projectSchema = new mongoose.Schema({
       baseSize: { type: Number, default: 16 },
     },
   },
+  website: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Website'
+  },
   isPublic: { type: Boolean, default: true },
   publishedAt: { type: Date },
   version: { type: Number, default: 1 },

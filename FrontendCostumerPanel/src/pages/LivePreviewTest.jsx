@@ -14,7 +14,13 @@ export default function LivePreviewTest() {
   );
 }
 
-root.render(<MyComponent {...props} />);`);
+if (window.root && window.root.render) {
+  window.root.render(React.createElement(MyComponent, props));
+} else if (window.ReactDOM && window.ReactDOM.render) {
+  ReactDOM.render(React.createElement(MyComponent, props), document.getElementById('root'));
+} else {
+  console.error('Neither root nor ReactDOM.render is available');
+}`);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

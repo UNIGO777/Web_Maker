@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FolderKanban, Plus, ExternalLink, Github, Layers } from 'lucide-react'
+import { FolderKanban, Plus, ExternalLink, Github, Layers, Edit } from 'lucide-react'
 import api from '../lib/axios'
 import useAuthStore from '../Stores/AuthenticationStore'
-import CreateProjectModal from '../components/CreateProjectModal'
+import CreateProjectModal from '../Components/CreateProjectModal'
+import WebsiteConfigForm from '../Components/WebsiteConfigForm'
 
 export default function Dashboard() {
   const { token } = useAuthStore()
@@ -13,6 +14,8 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [portfolio, setPortfolio] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [showWebsiteConfig, setShowWebsiteConfig] = useState(false)
+  const [newProject, setNewProject] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -34,18 +37,28 @@ export default function Dashboard() {
 
   
 
-  const handleProjectCreated = async (newProject) => {
-    // Refresh the portfolio data to show the new project
-    try {
-      setLoading(true)
-      setError('')
-      const { data } = await api.get('/portfolio')
-      setPortfolio(data?.data?.portfolio || null)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+  const handleProjectCreated = async (createdProject) => {
+    // Show website configuration form first
+    setNewProject(createdProject);
+    setShowWebsiteConfig(true);
+  }
+
+  const handleWebsiteConfigSaved = (websiteData) => {
+    // Navigate to web editor after website config is saved
+    if (newProject && newProject._id) {
+      navigate(`/web-editor/${newProject._id}`);
     }
+    setShowWebsiteConfig(false);
+    setNewProject(null);
+  }
+
+  const handleWebsiteConfigSkipped = () => {
+    // Navigate to web editor without configuring website
+    if (newProject && newProject._id) {
+      navigate(`/web-editor/${newProject._id}`);
+    }
+    setShowWebsiteConfig(false);
+    setNewProject(null);
   }
 
   const projects = portfolio?.projects || []
@@ -178,6 +191,12 @@ export default function Dashboard() {
                 </div>
                 {/* Links */}
                 <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={() => navigate(`/web-editor/${p._id}`)}
+                    className="inline-flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+                  >
+                    <Edit size={14} /> Edit Website
+                  </button>
                   {p.liveUrl && (
                     <a href={p.liveUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
                       <ExternalLink size={14} /> Live
@@ -209,6 +228,15 @@ export default function Dashboard() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleProjectCreated}
       />
+
+      {/* Website Configuration Modal */}
+      {showWebsiteConfig && newProject && newProject.website && (
+        <WebsiteConfigForm
+          website={newProject.website}
+          onClose={handleWebsiteConfigSkipped}
+          onSave={handleWebsiteConfigSaved}
+        />
+      )}
     </div>
   )
 }

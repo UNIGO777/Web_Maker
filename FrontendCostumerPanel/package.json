@@ -19,6 +19,7 @@
     "framer-motion": "^12.23.12",
     "gsap": "^3.12.7",
     "html2canvas": "^1.4.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",
     "react-datepicker": "^8.2.1",

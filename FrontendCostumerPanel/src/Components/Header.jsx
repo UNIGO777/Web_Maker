@@ -5,13 +5,15 @@ import { useState } from 'react'
 import useAuthStore from '../Stores/AuthenticationStore'
 import useUserStore from '../Stores/UserStore'
 import Logo from '../assets/Logo.png'
+import { useNavigate } from 'react-router-dom'
 
 export default function Header() {
 
   const { token } = useAuthStore()
   const { user } = useUserStore()
-  console.log(user)
 
+  
+  const Navigate = useNavigate()
   
   
   
@@ -24,7 +26,9 @@ export default function Header() {
     >
       <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2" onClick={() => {
+             Navigate('/')
+          }}>
             <img src={Logo} className='h-16' alt="" />
           </motion.div>
           <div className="flex items-center gap-3">

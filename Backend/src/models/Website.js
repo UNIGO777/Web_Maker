@@ -4,26 +4,28 @@ const websiteSchema = new mongoose.Schema({
     project: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Project',
-        required: true
+        required: false
     },
     logo: {
         type: String,
-        required: true
+        required: false,
+        default: 'https://www.example.com/logo.png'
     },
     seo: {
         title: {
             type: String,
-            required: true,
+            required: false,
             maxLength: 60 // Recommended SEO title length
         },
         description: {
             type: String,
-            required: true,
+            required: false,
             maxLength: 160 // Recommended SEO meta description length
         },
         keywords: {
             type: [String],
-            required: true,
+            required: false,
+            default: [],
             validate: {
                 validator: function (arr) {
                     return arr.length <= 10; // Limit number of keywords
@@ -33,20 +35,20 @@ const websiteSchema = new mongoose.Schema({
         },
         canonicalUrl: {
             type: String,
-            required: true
+            required: false
         },
         ogImage: {
             type: String,
-            required: true
+            required: false
         },
         ogTitle: {
             type: String,
-            required: true,
+            required: false,
             maxLength: 60
         },
         ogDescription: {
             type: String,
-            required: true,
+            required: false,
             maxLength: 160
         }
     },
@@ -110,10 +112,6 @@ const websiteSchema = new mongoose.Schema({
                 message: 'Each prop must have key, value, and type properties. Supported types: string, number, boolean, object, array. Object and array values must be valid JSON.'
             }
         },
-        styles: {
-            type: Object, // optional Tailwind overrides or custom CSS
-            default: {}
-        },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User" // admin who created the component
@@ -128,3 +126,7 @@ const websiteSchema = new mongoose.Schema({
         }
     }]
 });
+
+
+const Website = mongoose.model('Website', websiteSchema);
+module.exports = Website;

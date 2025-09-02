@@ -5,15 +5,15 @@ function LivePreviewTest() {
   const code = `
 
 function Navbar({ logo, brand, links }) {
-  console.log('useState available:', typeof useState);
-  const [isOpen, setIsOpen] = useState(false);
+  console.log('useState available:', typeof React.useState);
+  const [isOpen, setIsOpen] = React.useState(false);
   console.log('isOpen state:', isOpen);
 
   return (
       <nav className="bg-white shadow-md fixed w-full z-50">
         <div className=" mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-yellow-100 p-2 text-sm">
-            <strong>useState Test:</strong> isOpen = {isOpen ? 'true' : 'false'} | useState type: {typeof useState}
+            <strong>useState Test:</strong> isOpen = {isOpen ? 'true' : 'false'} | useState type: {typeof React.useState}
           </div>
           <div className="flex justify-between h-16 items-center">
 
@@ -114,7 +114,13 @@ const navbarProps = {
   ],
 };
 
-root.render(<Navbar {...navbarProps} />);
+if (window.root && window.ReactDOM) {
+  window.root.render(React.createElement(Navbar, navbarProps));
+} else if (window.ReactDOM && window.ReactDOM.render) {
+  ReactDOM.render(React.createElement(Navbar, navbarProps), document.getElementById('root'));
+} else {
+  console.error('Neither root nor ReactDOM.render is available');
+}
 `;
 
   return (

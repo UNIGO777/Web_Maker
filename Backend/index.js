@@ -60,6 +60,7 @@ app.use('/api/users', require('./src/routes/users'));
 app.use('/api/projects', require('./src/routes/projects'));
 app.use('/api/portfolio', require('./src/routes/portfolio'));
 app.use('/api/components', require('./src/routes/components'));
+app.use('/api/websites', require('./src/routes/websites'));
 
 app.use('/api/admin', require('./src/routes/admin'));
 // app.use('/api/auth', require('./src/routes/auth'));

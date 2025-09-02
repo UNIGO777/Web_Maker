@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const Website = require('../models/Website');
 const path = require('path');
 
 // @desc    Get all projects for a user
@@ -13,8 +14,9 @@ exports.getProjects = async (req, res) => {
     // Get total count for pagination
     const totalProjects = await Project.countDocuments({ user: req.user._id });
     
-    // Get projects with pagination
+    // Get projects with pagination and populate website
     const projects = await Project.find({ user: req.user._id })
+      .populate('website')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -130,6 +132,17 @@ exports.createProject = async (req, res) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
+    // Create website document first
+    const website = new Website({
+      project: null, // Will be set after project creation
+      seo: {
+        title: name || 'My Website',
+        description: description || 'A beautiful website built with our platform'
+      },
+      components: []
+    });
+    await website.save();
+
     const projectData = {
       user: req.user._id,
       name,
@@ -137,11 +150,19 @@ exports.createProject = async (req, res) => {
       description,
       thumbnail,
       design,
-      isPublic
+      isPublic,
+      website: website._id
     };
 
     const project = new Project(projectData);
     await project.save();
+
+    // Update website with project reference
+    website.project = project._id;
+    await website.save();
+
+    // Populate the website field before returning
+    await project.populate('website');
 
     res.status(201).json({
       success: true,

@@ -13,6 +13,8 @@ import AdminRouteGuard from './components/admin/AdminRouteGuard.jsx'
 import AdminEditor from './pages/admin/CodeEditor.jsx'
 import Components from './pages/admin/Components.jsx'
 import TestCodeEditor from './pages/TestCodeEditor.jsx'
+import WebEditor from './pages/WebEditor.jsx'
+import UserRouteGuard from './Components/UserRouteGuard.jsx'
 
 
 const router = createBrowserRouter([
@@ -21,10 +23,13 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Landing /> },
-      { path: 'login', element: <Login /> },
-      { path: 'register', element: <Register /> },
-      { path: 'dashboard', element: <Dashboard/>},
-      { path: 'test-editor', element: <TestCodeEditor /> }
+      { path: 'login', element: (<Login />) },
+      { path: 'register', element: (<Register />) },
+      { path: 'dashboard', element: (<UserRouteGuard><Dashboard /></UserRouteGuard>)},  
+      
+      { path: 'web-editor', element: <WebEditor /> },
+      { path: 'web-editor/:id', element: (<UserRouteGuard><WebEditor /></UserRouteGuard>) },
+
     ],
   },
   {
