@@ -1,11 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit, Trash2, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { useDrag, useDrop } from 'react-dnd';
+import { Edit, Trash2, Monitor, Tablet, Smartphone, GripVertical } from 'lucide-react';
 import * as Babel from '@babel/standalone';
 
-const CanvasComponent = ({ component, isSelected, onSelect, onRemove }) => {
+const CanvasComponent = ({ component, index, isSelected, onSelect, onRemove, moveComponent }) => {
   const [deviceMode, setDeviceMode] = useState('desktop'); // desktop, tablet, mobile
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Early return if component is not provided
+  if (!component) {
+    return null;
+  }
+
+  // Drag and Drop functionality
+  const [{ isDragging }, drag] = useDrag({
+    type: 'component',
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'component',
+    hover: (draggedItem) => {
+      if (draggedItem.index !== index) {
+        moveComponent(draggedItem.index, index);
+        draggedItem.index = index;
+      }
+    },
+  });
 
   // Render component using iframe like LivePreview
   useEffect(() => {
@@ -222,8 +247,13 @@ const CanvasComponent = ({ component, isSelected, onSelect, onRemove }) => {
 
   return (
     <div
-      ref={containerRef}
-      className={`w-full group ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+      ref={(node) => {
+        containerRef.current = node;
+        drag(drop(node));
+      }}
+      className={`w-full group cursor-move ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''} ${
+        isDragging ? 'opacity-50' : ''
+      }`}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
@@ -235,6 +265,17 @@ const CanvasComponent = ({ component, isSelected, onSelect, onRemove }) => {
         {isSelected && (
           <div className="absolute inset-0 bg-blue-500 bg-opacity-10 border-2 border-blue-500 rounded-lg pointer-events-none" />
         )}
+        
+        <div className={`absolute -top-6 left-0 flex space-x-1 transition-opacity ${
+          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
+          <div
+            className="p-1 bg-gray-600 text-white rounded shadow-sm cursor-move"
+            title="Drag to reorder"
+          >
+            <GripVertical size={12} />
+          </div>
+        </div>
         
         <div className={`absolute -top-6 right-0 flex space-x-1 transition-opacity ${
           isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'

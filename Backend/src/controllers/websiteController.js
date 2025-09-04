@@ -28,6 +28,11 @@ exports.getWebsiteByProject = async (req, res) => {
       });
     }
 
+    // Sort components by sequence before returning
+    if (website.components && website.components.length > 0) {
+      website.components.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+    }
+
     res.json({
       success: true,
       data: { website }
@@ -195,7 +200,6 @@ exports.updateWebsiteComponents = async (req, res) => {
 // @access  Private
 exports.getWebsite = async (req, res) => {
   try {
-    // Find the website and verify ownership through project
     const website = await Website.findById(req.params.id).populate('project');
 
     if (!website) {
@@ -211,6 +215,11 @@ exports.getWebsite = async (req, res) => {
         success: false,
         message: 'Not authorized to access this website'
       });
+    }
+
+    // Sort components by sequence before returning
+    if (website.components && website.components.length > 0) {
+      website.components.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
     }
 
     res.json({

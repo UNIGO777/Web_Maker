@@ -1,17 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 import * as Babel from '@babel/standalone';
 
-const WebsitePreview = ({ components }) => {
+const WebsitePreview = ({ components = [] }) => {
   const iframeRef = useRef(null);
 
   useEffect(() => {
-    if (iframeRef.current && components.length > 0) {
+    if (iframeRef.current && Array.isArray(components) && components.length > 0) {
       renderWebsite();
     }
   }, [components]);
 
   const renderWebsite = () => {
-    if (!iframeRef.current) return;
+    if (!iframeRef.current || !Array.isArray(components) || components.length === 0) return;
 
     const iframe = iframeRef.current;
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -21,7 +21,10 @@ const WebsitePreview = ({ components }) => {
       let combinedComponents = '';
       let componentElements = [];
 
-      components.forEach((component, index) => {
+      // Sort components by sequence before processing
+      const sortedComponents = [...components].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+
+      sortedComponents.forEach((component, index) => {
         // Prepare props object for each component
         const props = {};
         if (component.currentProps && Array.isArray(component.currentProps)) {
@@ -111,6 +114,9 @@ const WebsitePreview = ({ components }) => {
           <title>Website Preview</title>
           <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
           <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+          
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/lucide.min.js"></script>
+
           <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import Landing from './pages/Landing.jsx'
@@ -15,6 +15,10 @@ import Components from './pages/admin/Components.jsx'
 import TestCodeEditor from './pages/TestCodeEditor.jsx'
 import WebEditor from './pages/WebEditor.jsx'
 import UserRouteGuard from './Components/UserRouteGuard.jsx'
+import NotFound from './pages/NotFound.jsx'
+
+
+
 
 
 const router = createBrowserRouter([
@@ -29,12 +33,14 @@ const router = createBrowserRouter([
       
       { path: 'web-editor', element: <WebEditor /> },
       { path: 'web-editor/:id', element: (<UserRouteGuard><WebEditor /></UserRouteGuard>) },
+      { path: '*', element: <NotFound /> },
 
     ],
   },
   {
     path: '/admin',
     children: [
+      { index: true, element: <Navigate to="/admin/login" replace /> },
       { path: 'login', element: <AdminLogin /> },
       { 
         path: 'dashboard', 
@@ -59,10 +65,17 @@ const router = createBrowserRouter([
             <AdminEditor />
           </AdminRouteGuard>
         ) 
-      }
+      },
+      { path: '*', element: <NotFound /> }
     ],
   },
+  {
+    path: '/admin',
+    element: <NotFound />
+  }
 ])
+
+
 
 
 

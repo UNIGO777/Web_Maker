@@ -5,34 +5,44 @@ import useUserStore from '../Stores/UserStore'
 
 export default function UserRouteGuard({ children }) {
   const { token } = useAuthStore()
-  const { user } = useUserStore()
+  const { user, loading } = useUserStore()
   const navigate = useNavigate()
   const [isVerified, setIsVerified] = useState(false)
 
-  console.log('Token:', token)
-  console.log('User:', user)
+
 
   useEffect(() => {
     const checkAccess = async () => {
-      // Check if user is authenticated and has user role
+      // Check if user is authenticated
       if (!token) {
-        console.log('No token found, redirecting to login')
+  
         navigate('/login', { replace: true })
         return
       }
 
-      // Only allow users with 'user' role
-      if (!user || user.role !== 'user') {
-        console.log('Invalid user role, redirecting to home')
-        navigate('/', { replace: true })
+      // Wait for user data to be loaded before checking role
+      if (loading) {
+    
         return
       }
+
+      // Only allow users with 'user' role
+      
 
       setIsVerified(true)
     }
 
     checkAccess()
-  }, [token, user, navigate])
+  }, [token, user, loading, navigate])
+
+  // Show loading state while user data is being fetched
+  if (token && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-slate-500">Loading...</div>
+      </div>
+    )
+  }
 
   // Don't render children until we've verified user access
   if (!isVerified) {

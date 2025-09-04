@@ -1,4 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import CanvasComponent from './CanvasComponent';
 import WebsitePreview from './WebsitePreview';
 import WebsiteExporter from '../utils/WebsiteExporter';
@@ -8,13 +10,23 @@ const Canvas = ({
   components, 
   onComponentSelect, 
   onComponentRemove, 
-  selectedComponent 
+  selectedComponent,
+  onComponentMove 
 }) => {
   const canvasRef = useRef(null);
   const [canvasHeight, setCanvasHeight] = useState(1200); // Default height
   const [isResizing, setIsResizing] = useState(false);
   const [viewMode, setViewMode] = useState('edit'); // 'edit' or 'preview'
   const [isExporting, setIsExporting] = useState(false);
+
+  // Handle component reordering via drag and drop
+  const moveComponent = useCallback((dragIndex, hoverIndex) => {
+    if (dragIndex === hoverIndex) return;
+    
+    if (onComponentMove) {
+      onComponentMove(dragIndex, hoverIndex);
+    }
+  }, [onComponentMove]);
 
   // Handle website export
   const handleExportWebsite = async () => {
@@ -69,7 +81,8 @@ const Canvas = ({
   }, [isResizing]);
 
   return (
-    <div className="h-full bg-gray-100 relative overflow-auto">
+    <DndProvider backend={HTML5Backend}>
+      <div className="h-full bg-gray-100 relative overflow-auto">
       {/* View Mode Toggle */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-4">
         <div className="flex items-center justify-between">
@@ -160,13 +173,17 @@ const Canvas = ({
           <div className="w-full h-full relative">
             {/* Canvas Components - Stacked Layout */}
             <div className="space-y-4 p-4">
-              {components.map((component) => (
+              {[...components]
+                .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+                .map((component, index) => (
                 <CanvasComponent
                   key={component.id}
                   component={component}
+                  index={index}
                   isSelected={selectedComponent?.id === component.id}
                   onSelect={() => onComponentSelect(component)}
                   onRemove={() => onComponentRemove(component.id)}
+                  moveComponent={moveComponent}
                 />
               ))}
             </div>
@@ -220,6 +237,7 @@ const Canvas = ({
         )}
       </div>
     </div>
+    </DndProvider>
   );
 };
 

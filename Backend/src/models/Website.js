@@ -123,6 +123,10 @@ const websiteSchema = new mongoose.Schema({
         updatedAt: {
             type: Date,
             default: Date.now
+        },
+        sequence: {
+            type: Number,
+            default: 0 // Used for ordering components
         }
     }]
 });

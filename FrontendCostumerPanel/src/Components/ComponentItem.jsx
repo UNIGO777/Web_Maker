@@ -5,6 +5,11 @@ import { Eye, Plus, Edit, Image as ImageIcon } from 'lucide-react';
 const ComponentItem = ({ component, onSelect, onEdit, isUsed = false }) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Early return if component is not provided
+  if (!component) {
+    return null;
+  }
+
   const getCategoryColor = (category) => {
     const colors = {
       hero: 'bg-purple-100 text-purple-800',

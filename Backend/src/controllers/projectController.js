@@ -238,7 +238,8 @@ exports.updateProject = async (req, res) => {
 // @access  Private
 exports.deleteProject = async (req, res) => {
   try {
-    const project = await Project.findOneAndDelete({
+    // First find the project to get the website ID
+    const project = await Project.findOne({
       _id: req.params.id,
       user: req.user._id
     });
@@ -250,9 +251,17 @@ exports.deleteProject = async (req, res) => {
       });
     }
 
+    // Delete associated website if it exists
+    if (project.website) {
+      await Website.findByIdAndDelete(project.website);
+    }
+
+    // Delete the project
+    await Project.findByIdAndDelete(project._id);
+
     res.json({
       success: true,
-      message: 'Project deleted successfully'
+      message: 'Project and associated website deleted successfully'
     });
   } catch (error) {
     res.status(500).json({

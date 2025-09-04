@@ -4,8 +4,9 @@ import SidePanel from '../Components/SidePanel';
 import Canvas from '../Components/Canvas';
 import DynamicFormBuilder from '../Components/DynamicFormBuilder';
 import ComponentEditor from '../Components/ComponentEditor';
+import AnimatedLoader from '../Components/AnimatedLoader';
 import useAuthStore from '../Stores/AuthenticationStore';
-import { X, Save, Eye, Undo, Redo, Menu } from 'lucide-react';
+import { X, Save, Eye, Undo, Redo, Menu, ChevronUp, ChevronDown } from 'lucide-react';
 import useComponentStore from '../Stores/ComponentStore';
 
 
@@ -18,6 +19,7 @@ const WebEditor = () => {
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -80,7 +82,8 @@ const WebEditor = () => {
           defaultProps: component.defaultProps || [],
           currentProps: component.defaultProps || [],
           position: { x: 100 + (index * 50), y: 100 + (index * 50) },
-          styles: component.styles || {}
+          styles: component.styles || {},
+          sequence: component.sequence || index
         }));
         
         setCanvasComponents(existingCanvasComponents);
@@ -118,7 +121,8 @@ const WebEditor = () => {
       defaultProps: component.defaultProps || [],
       currentProps: component.defaultProps || [],
       position: position,
-      styles: component.styles || {}
+      styles: component.styles || {},
+      sequence: canvasComponents.length
     };
     
     const newCanvasComponents = [...canvasComponents, newComponent];
@@ -150,6 +154,66 @@ const WebEditor = () => {
         ? { ...comp, currentProps: newProps }
         : comp
     );
+    setCanvasComponents(updatedComponents);
+    addToHistory(updatedComponents);
+    
+    // Update selectedComponent to reflect the changes immediately
+    if (selectedComponent && selectedComponent.id === componentId) {
+      setSelectedComponent({ ...selectedComponent, currentProps: newProps });
+    }
+  };
+
+  // Move component up in sequence
+  const moveComponentUp = (componentId) => {
+    const componentIndex = canvasComponents.findIndex(comp => comp.id === componentId);
+    if (componentIndex > 0) {
+      const updatedComponents = [...canvasComponents];
+      const temp = updatedComponents[componentIndex].sequence;
+      updatedComponents[componentIndex].sequence = updatedComponents[componentIndex - 1].sequence;
+      updatedComponents[componentIndex - 1].sequence = temp;
+      
+      // Swap positions in array
+      [updatedComponents[componentIndex], updatedComponents[componentIndex - 1]] = 
+      [updatedComponents[componentIndex - 1], updatedComponents[componentIndex]];
+      
+      setCanvasComponents(updatedComponents);
+      addToHistory(updatedComponents);
+    }
+  };
+
+  // Move component down in sequence
+  const moveComponentDown = (componentId) => {
+    const componentIndex = canvasComponents.findIndex(comp => comp.id === componentId);
+    if (componentIndex < canvasComponents.length - 1) {
+      const updatedComponents = [...canvasComponents];
+      const temp = updatedComponents[componentIndex].sequence;
+      updatedComponents[componentIndex].sequence = updatedComponents[componentIndex + 1].sequence;
+      updatedComponents[componentIndex + 1].sequence = temp;
+      
+      // Swap positions in array
+      [updatedComponents[componentIndex], updatedComponents[componentIndex + 1]] = 
+      [updatedComponents[componentIndex + 1], updatedComponents[componentIndex]];
+      
+      setCanvasComponents(updatedComponents);
+      addToHistory(updatedComponents);
+    }
+  };
+
+  // Handle drag and drop component reordering
+  const handleComponentMove = (dragIndex, hoverIndex) => {
+    const updatedComponents = [...canvasComponents];
+    const draggedComponent = updatedComponents[dragIndex];
+    
+    // Remove the dragged component from its current position
+    updatedComponents.splice(dragIndex, 1);
+    // Insert it at the new position
+    updatedComponents.splice(hoverIndex, 0, draggedComponent);
+    
+    // Update sequence numbers to match new positions
+    updatedComponents.forEach((comp, index) => {
+      comp.sequence = index;
+    });
+    
     setCanvasComponents(updatedComponents);
     addToHistory(updatedComponents);
   };
@@ -226,16 +290,18 @@ const WebEditor = () => {
         return;
       }
 
-      setLoading(true);
+      setSaving(true);
       
-      // Prepare website update data with canvas components
+      // Prepare website update data with canvas components sorted by sequence
+      const sortedComponents = [...canvasComponents].sort((a, b) => a.sequence - b.sequence);
       const websiteUpdateData = {
-        components: canvasComponents.map(comp => ({
+        components: sortedComponents.map(comp => ({
           _id: comp.componentId,
           name: comp.name,
           code: comp.code,
           defaultProps: comp.currentProps || comp.defaultProps,
-          category: comp.category || 'general'
+          category: comp.category || 'general',
+          sequence: comp.sequence
         }))
       };
 
@@ -260,7 +326,7 @@ const WebEditor = () => {
       console.error('Error saving website:', err);
       alert('Failed to save website: ' + err.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -270,70 +336,90 @@ const WebEditor = () => {
     console.log('Previewing website...', canvasComponents);
   };
 
-  const filteredComponents = components.filter(component =>
+  const filteredComponents = (components || []).filter(component =>
     component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     component.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Show loading screen during initial load
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100">
+        <AnimatedLoader />
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen flex bg-gray-100 pt-16">
+    <div className="h-screen flex flex-col md:flex-row bg-gray-100 pt-16">
+      {/* Saving overlay */}
+      {saving && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center">
+            <AnimatedLoader />
+            <p className="mt-4 text-gray-600 font-medium">Saving your website...</p>
+          </div>
+        </div>
+      )}
         {/* Side Panel */}
         {showSidePanel && (
-          <SidePanel
-            components={filteredComponents}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onComponentSelect={addComponentToCanvas}
-            onComponentEdit={editComponent}
-            loading={loading}
-            error={error}
-            onClose={() => setShowSidePanel(false)}
-            usedComponentIds={getUsedComponentIds()}
-          />
+          <div className="md:relative absolute inset-0 md:inset-auto z-30 md:z-auto">
+            <SidePanel
+              components={filteredComponents}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              onComponentSelect={addComponentToCanvas}
+              onComponentEdit={editComponent}
+              loading={loading}
+              error={error}
+              onClose={() => setShowSidePanel(false)}
+              usedComponentIds={getUsedComponentIds()}
+            />
+          </div>
         )}
 
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col">
           {/* Toolbar */}
-          <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+          <div className="bg-white border-b border-gray-200 px-2 md:px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center space-x-1 md:space-x-2">
               {!showSidePanel && (
                 <button
                   onClick={() => setShowSidePanel(true)}
-                  className="p-2 text-gray-600 hover:text-gray-800"
+                  className="p-1.5 md:p-2 text-gray-600 hover:text-gray-800"
                   title="Show Components Panel"
                 >
-                  <Menu size={18} />
+                  <Menu size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
               )}
               <button
                 onClick={undo}
                 disabled={historyIndex <= 0}
-                className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1.5 md:p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Undo"
               >
-                <Undo size={18} />
+                <Undo size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
               <button
                 onClick={redo}
                 disabled={historyIndex >= history.length - 1}
-                className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1.5 md:p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Redo"
               >
-                <Redo size={18} />
+                <Redo size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
             </div>
             
-            <h1 className="text-lg font-semibold text-gray-800">Web Editor</h1>
+            <h1 className="text-sm md:text-lg font-semibold text-gray-800">Web Editor</h1>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 md:space-x-2">
               
               <button
                 onClick={saveWebsite}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+                className="px-2 md:px-4 py-1.5 md:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
               >
-                <Save size={16} />
-                <span>Save</span>
+                <Save size={14} className="md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Save</span>
               </button>
             </div>
           </div>
@@ -341,31 +427,55 @@ const WebEditor = () => {
           {/* Canvas and Props Panel Container */}
           <div className="flex-1 flex">
             {/* Canvas */}
-            <div className={`flex-1 ${showPropsPanel ? 'mr-80' : ''} transition-all duration-300`}>
+            <div className={`flex-1 ${showPropsPanel ? 'md:mr-80' : ''} transition-all duration-300`}>
               <Canvas
                 components={canvasComponents}
                 onComponentSelect={selectComponent}
                 onComponentRemove={removeComponentFromCanvas}
+                onComponentMove={handleComponentMove}
+                onComponentMoveUp={moveComponentUp}
+                onComponentMoveDown={moveComponentDown}
                 selectedComponent={selectedComponent}
               />
             </div>
 
             {/* Props Panel */}
             {showPropsPanel && selectedComponent && (
-              <div className="w-80 bg-white border-l border-gray-200 fixed right-0 top-0 h-full overflow-y-auto z-10">
+              <div className="w-full md:w-80 bg-white border-l border-gray-200 fixed right-0 top-0 h-full overflow-y-auto z-20 md:z-10">
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-800">
                     Edit {selectedComponent.name}
                   </h3>
-                  <button
-                    onClick={() => {
-                      setShowPropsPanel(false);
-                      setSelectedComponent(null);
-                    }}
-                    className="p-1 text-gray-500 hover:text-gray-700"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    {/* Sequence Controls */}
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => moveComponentUp(selectedComponent.id)}
+                        disabled={canvasComponents.findIndex(comp => comp.id === selectedComponent.id) === 0}
+                        className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Move Up"
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <button
+                        onClick={() => moveComponentDown(selectedComponent.id)}
+                        disabled={canvasComponents.findIndex(comp => comp.id === selectedComponent.id) === canvasComponents.length - 1}
+                        className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Move Down"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowPropsPanel(false);
+                        setSelectedComponent(null);
+                      }}
+                      className="p-1 text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="p-4">

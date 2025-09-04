@@ -11,11 +11,16 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   const adminToken = localStorage.getItem('adminToken')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  if (adminToken) {
+  // console.log(adminToken)
+  
+  // Check if the request is for admin routes
+  console.log(location.pathname)
+  const isAdminRoute = location.pathname && (location.pathname.includes('/admin') || location.pathname.startsWith('/admin'))
+  
+  if (isAdminRoute && adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`
+  } else if (!isAdminRoute && token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   
   return config

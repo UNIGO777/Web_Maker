@@ -331,12 +331,12 @@ export default function LivePreview({ code, props = {}, onRenderComplete }) {
               }
               
               // Start execution
-              console.log('About to call executeCode...');
+      
               executeCode();
               
               // Also try calling it after a delay in case of timing issues
               setTimeout(() => {
-                console.log('Calling executeCode again after delay...');
+      
                 executeCode();
               }, 1000);
             </script>

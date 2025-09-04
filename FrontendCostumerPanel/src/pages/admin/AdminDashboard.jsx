@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   
   const navigate = useNavigate()
-  const { adminToken, adminUser, logout, user } = useAuthStore()
+  const { adminToken, adminUser, AdminLogout, user } = useAuthStore()
 
   useEffect(() => {
     if (!adminToken || adminUser?.role !== 'admin') {
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error loading dashboard data:', error)
       if (error.response?.status === 401) {
-        logout()
+        AdminLogout()
         navigate('/admin/login')
       }
     } finally {
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
   }
 
   const handleLogout = () => {
-    logout()
+    AdminLogout()
     navigate('/admin/login')
   }
 

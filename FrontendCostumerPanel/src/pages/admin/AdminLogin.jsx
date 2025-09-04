@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react'
@@ -15,7 +15,14 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   
   const navigate = useNavigate()
-  const { adminLogin } = useAuthStore()
+  const { adminLogin, adminToken } = useAuthStore()
+
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (adminToken) {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }, [adminToken, navigate])
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))

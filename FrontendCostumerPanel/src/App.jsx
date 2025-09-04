@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 import useAuthStore from './Stores/AuthenticationStore'
 import useUserStore from './Stores/UserStore'
 import './App.css'
-import Header from './components/Header'
+import Header from './Components/Header'
 
 
 
